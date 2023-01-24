@@ -51,11 +51,8 @@ spec:
       {{- else }}
         image: "alpine"
       {{- end }}
-      {{- $redisUrl="{{ include "appsmith.fullname" . }}-redis-master.{{.Release.Namespace}}.svc.cluster.local"}}
-      {{- if .Values.applicationConfig.APPSMITH_REDIS_URL }}
-      {{- $redisUrl = .Values.applicationConfig.APPSMITH_REDIS_URL }}
-      {{- end }}
-        command: ['sh', '-c', "apk add redis; until redis-cli -h {{$redisUrl}} ping; do echo waiting for redis; sleep 2; done"]
+      {{- $redisUrl := or .Values.applicationConfig.APPSMITH_REDIS_URL (printf "%s-redis-master.%s.svc.cluster.local" (include "appsmith.fullname" .) .Release.Namespace) }}
+        command: ['sh', '-c', "apk add redis; until redis-cli -h {{ $redisUrl }} ping; do echo waiting for redis; sleep 2; done"]
       {{- end }}
       {{- if .Values.mongodb.enabled }}
       - name: mongo-init-container
@@ -64,10 +61,7 @@ spec:
       {{- else }}
         image:  "docker.io/bitnami/mongodb:4.4.11-debian-10-r12"
       {{- end }}
-      {{- $mongoUrl="{{appsmith-mongodb.{{.Release.Namespace}}.svc.cluster.local}}" }}
-      {{- if .Values.applicationConfig.APPSMITH_MONGODB_URI }}
-      {{- $mongoUrl = .Values.applicationConfig.APPSMITH_MONGODB_URI }}
-      {{- end }}
+      {{- $mongoUrl := or .Values.applicationConfig.APPSMITH_MONGODB_URI (printf "appsmith-mongodb.%s.svc.cluster.local" .Release.Namespace) }}
         command: ['sh', '-c', "until mongo --host {{$mongoUrl}} --eval 'db.runCommand({ping:1})' ; do echo waiting for mongo; sleep 2; done"]
       {{- end }}
       containers:
